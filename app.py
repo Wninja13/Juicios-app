@@ -149,6 +149,37 @@ def delete_movimiento(movimiento_id):
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@app.route('/carga', methods=['GET', 'POST'])
+def carga_juicios():
+    if request.method == 'POST':
+        # Obtención de los datos del formulario
+        numero_expediente = request.form['numero_expediente']
+        caratula = request.form['caratula']
+        tema = request.form['tema']
+        ultimo_movimiento = request.form.get('ultimo_movimiento', '')
+        nro_camara = request.form.get('nro_camara', '')
+        nro_csjn = request.form.get('nro_csjn', '')
+
+        # Inserción de los datos en la base de datos
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO juicios (numero_expediente, caratula, tema, ultimo_movimiento)
+            VALUES (?, ?, ?, ?)
+            """,
+            (numero_expediente, caratula, tema, ultimo_movimiento)
+        )
+        conn.commit()
+        conn.close()
+
+        # Redirigir al index después de guardar
+        return redirect(url_for('index'))
+
+    # Renderizar el template de carga.html si es método GET
+    return render_template("carga.html")
+
+
 @app.route('/export')
 def export_to_excel():
     conn = sqlite3.connect(DB_NAME)
