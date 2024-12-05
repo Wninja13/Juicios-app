@@ -59,12 +59,23 @@ def index():
     cursor = conn.cursor()
     if search_query:
         cursor.execute(
-            "SELECT id, numero_expediente || ' - ' || caratula || ' - ' || tema AS title, ultimo_movimiento FROM juicios WHERE numero_expediente LIKE ? OR caratula LIKE ? OR tema LIKE ?",
+            """
+            SELECT id, 
+                   'TFN: ' || numero_expediente || ' - ' || caratula || ' CAF: ' || IFNULL(nro_camara, 'N/A') || ' CSJN: ' || IFNULL(nro_csjn, 'N/A') || ' - Último Movimiento: ' || IFNULL(ultimo_movimiento, 'Sin movimientos') AS title,
+                   ultimo_movimiento
+            FROM juicios
+            WHERE numero_expediente LIKE ? OR caratula LIKE ? OR tema LIKE ?
+            """,
             (f"%{search_query}%", f"%{search_query}%", f"%{search_query}%")
         )
     else:
         cursor.execute(
-            "SELECT id, numero_expediente || ' - ' || caratula || ' - ' || tema AS title, ultimo_movimiento FROM juicios"
+            """
+            SELECT id, 
+                   'TFN: ' || numero_expediente || ' - ' || caratula || ' CAF: ' || IFNULL(nro_camara, 'N/A') || ' CSJN: ' || IFNULL(nro_csjn, 'N/A') || ' - Último Movimiento: ' || IFNULL(ultimo_movimiento, 'Sin movimientos') AS title,
+                   ultimo_movimiento
+            FROM juicios
+            """
         )
     juicios = cursor.fetchall()
     conn.close()
@@ -178,6 +189,15 @@ def carga_juicios():
 
     # Renderizar el template de carga.html si es método GET
     return render_template("carga.html")
+
+@app.route('/delete/<int:juicio_id>', methods=['POST'])
+def delete_juicio(juicio_id):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM juicios WHERE id = ?", (juicio_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('index'))
 
 
 @app.route('/export')
